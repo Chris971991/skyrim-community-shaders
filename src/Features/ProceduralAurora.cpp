@@ -223,6 +223,7 @@ ProceduralAurora::CommonBufferData ProceduralAurora::GetCommonBufferData()
 {
 	if (!loaded || !settings.Enabled) {
 		auroraVisibility = 0.0f;
+		lastClockUpdate = {};
 		return {};
 	}
 
@@ -241,7 +242,8 @@ ProceduralAurora::CommonBufferData ProceduralAurora::GetCommonBufferData()
 
 	// Advance the animation clock by real time, paused while the game is paused; it restarts each in-game night
 	const auto now = std::chrono::steady_clock::now();
-	double delta = lastClockUpdate.time_since_epoch().count() == 0 ? 0.0 : std::chrono::duration<double>(now - lastClockUpdate).count();
+	const bool firstFrame = lastClockUpdate.time_since_epoch().count() == 0;
+	double delta = firstFrame ? 0.0 : std::chrono::duration<double>(now - lastClockUpdate).count();
 	lastClockUpdate = now;
 	const auto ui = RE::UI::GetSingleton();
 	if (ui && ui->GameIsPaused())
@@ -255,9 +257,11 @@ ProceduralAurora::CommonBufferData ProceduralAurora::GetCommonBufferData()
 	data.Time = static_cast<float>(animationTime);
 	data.RayDetail = settings.RayDetail;
 	data.Softness = settings.Softness;
-	// Ease toward the vanilla visibility so the aurora never pops, even where vanilla only switches it on or off
+	// Ease toward the vanilla visibility so the aurora never pops, even where vanilla only switches it on or off.
+	// On the first frame after enabling, start at the vanilla value: Effect.hlsl already hides the vanilla ribbons.
+	const float vanillaVisibility = GetVanillaAuroraVisibility();
 	const float visibilityStep = static_cast<float>(std::clamp(delta, 0.0, 0.1)) * 0.5f;
-	auroraVisibility += std::clamp(GetVanillaAuroraVisibility() - auroraVisibility, -visibilityStep, visibilityStep);
+	auroraVisibility = firstFrame ? vanillaVisibility : auroraVisibility + std::clamp(vanillaVisibility - auroraVisibility, -visibilityStep, visibilityStep);
 	data.Atmosphere = { auroraVisibility, settings.Haze, settings.Nebula };
 	data.FoldStrength = settings.FoldStrength;
 	data.RayStrength = settings.RayStrength;
@@ -340,23 +344,28 @@ void ProceduralAurora::LoadSettings(json& o_json)
 {
 	settings = o_json;
 
-	// Keep hand-edited values inside the slider ranges
+	// Keep hand-edited values inside the slider ranges; a non-finite value (NaN, inf) falls back to its default
+	const Settings defaults{};
+	auto sanitize = [](float& value, float fallback, float minValue, float maxValue) {
+		value = std::isfinite(value) ? std::clamp(value, minValue, maxValue) : fallback;
+	};
 	auto& s = settings;
-	s.Brightness = std::clamp(s.Brightness, 0.0f, 3.0f);
-	s.Speed = std::clamp(s.Speed, 0.0f, 4.0f);
-	s.RayDetail = std::clamp(s.RayDetail, 0.25f, 3.0f);
-	s.RayStrength = std::clamp(s.RayStrength, 0.0f, 2.0f);
-	s.FoldStrength = std::clamp(s.FoldStrength, 0.0f, 1.5f);
-	s.Softness = std::clamp(s.Softness, 0.0f, 1.0f);
-	s.Haze = std::clamp(s.Haze, 0.0f, 1.0f);
-	s.Nebula = std::clamp(s.Nebula, 0.0f, 1.0f);
-	s.FringeAmount = std::clamp(s.FringeAmount, 0.0f, 1.0f);
-	s.CrownStart = std::clamp(s.CrownStart, 0.0f, 1.0f);
-	s.GreatStormChance = std::clamp(s.GreatStormChance, 0.0f, 1.0f);
-	s.ColorVariety = std::clamp(s.ColorVariety, 0.0f, 1.0f);
-	for (auto* color : { &s.FringeColor, &s.BodyColor, &s.CrownColor })
-		for (auto& channel : *color)
-			channel = std::clamp(channel, 0.0f, 1.0f);
+	sanitize(s.Brightness, defaults.Brightness, 0.0f, 3.0f);
+	sanitize(s.Speed, defaults.Speed, 0.0f, 4.0f);
+	sanitize(s.RayDetail, defaults.RayDetail, 0.25f, 3.0f);
+	sanitize(s.RayStrength, defaults.RayStrength, 0.0f, 2.0f);
+	sanitize(s.FoldStrength, defaults.FoldStrength, 0.0f, 1.5f);
+	sanitize(s.Softness, defaults.Softness, 0.0f, 1.0f);
+	sanitize(s.Haze, defaults.Haze, 0.0f, 1.0f);
+	sanitize(s.Nebula, defaults.Nebula, 0.0f, 1.0f);
+	sanitize(s.FringeAmount, defaults.FringeAmount, 0.0f, 1.0f);
+	sanitize(s.CrownStart, defaults.CrownStart, 0.0f, 1.0f);
+	sanitize(s.GreatStormChance, defaults.GreatStormChance, 0.0f, 1.0f);
+	sanitize(s.ColorVariety, defaults.ColorVariety, 0.0f, 1.0f);
+	const std::array colors{ std::pair{ &s.FringeColor, &defaults.FringeColor }, std::pair{ &s.BodyColor, &defaults.BodyColor }, std::pair{ &s.CrownColor, &defaults.CrownColor } };
+	for (const auto& [color, fallback] : colors)
+		for (size_t i = 0; i < color->size(); ++i)
+			sanitize((*color)[i], (*fallback)[i], 0.0f, 1.0f);
 }
 
 void ProceduralAurora::SaveSettings(json& o_json)
