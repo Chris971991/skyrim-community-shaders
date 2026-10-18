@@ -943,9 +943,40 @@ void LightLimitFix::AddParticleLightsToBuffer(eastl::vector<LightData>& a_lights
 	}
 }
 
+namespace
+{
+	// Dovakarn: the batch renderer walks a linked list of passes (passGroupNext, +0x30 on 1.6.1170, read right
+	// after each SetupAndDrawPass call), and each pass's shader property and geometry sit in scattered,
+	// usually cold memory. While this pass is set up and submitted (about a microsecond of driver work),
+	// pull the next pass's property and geometry into cache, and the pass after that's own struct, so the
+	// next iteration does not stall on them. Prefetches never fault and change no state; the only plain
+	// reads are of the next pass, which is live in the list the engine is walking.
+	inline void PrefetchLines(const void* a_base, std::size_t a_bytes)
+	{
+		const auto* p = static_cast<const char*>(a_base);
+		for (std::size_t off = 0; off < a_bytes; off += 64)
+			_mm_prefetch(p + off, _MM_HINT_T0);
+	}
+
+	inline void PrefetchNextPass(const RE::BSRenderPass* a_pass)
+	{
+		const RE::BSRenderPass* next = a_pass->passGroupNext;
+		if (!next)
+			return;
+		if (const auto* afterNext = next->passGroupNext)
+			PrefetchLines(afterNext, sizeof(RE::BSRenderPass));
+		if (const auto* property = next->shaderProperty)
+			PrefetchLines(property, 0x100);  // vtable, flags, material pointer, lighting-property fields
+		if (const auto* geometry = next->geometry)
+			PrefetchLines(geometry, 0x180);  // vtable, world transform and bound, properties, renderer data, vertex desc
+	}
+}
+
 template <int N>
 void LightLimitFix::Hooks::BSBatchRenderer_RenderPassImmediately<N>::thunk(RE::BSRenderPass* a_pass, uint32_t a_technique, bool a_alphaTest, uint32_t a_renderFlags)
 {
+	if (a_pass && DovakarnPerf::settings.prefetchNextPass)
+		PrefetchNextPass(a_pass);
 	if (globals::features::lightLimitFix.CheckParticleLights(a_pass, a_technique))
 		func(a_pass, a_technique, a_alphaTest, a_renderFlags);
 }
