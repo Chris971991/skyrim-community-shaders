@@ -1,0 +1,23 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "Dovakarn",
+            "description": "Shipping build (same as ALL: VS 18, LTCG, AE+SE+VR) without zip packaging or deployment",
+            "inherits": "ALL",
+            "cacheVariables": {
+                "AUTO_PLUGIN_DEPLOYMENT": "OFF",
+                "ZIP_TO_DIST": "OFF",
+                "AIO_ZIP_TO_DIST": "OFF"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "Dovakarn",
+            "configurePreset": "Dovakarn",
+            "configuration": "Release",
+            "targets": ["CommunityShaders"]
+        }
+    ]
+}
