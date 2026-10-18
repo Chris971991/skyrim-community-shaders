@@ -4,7 +4,7 @@
 // Modified by the Dovakarn team, 2026-10-19. Every change in this fork is listed in DOVAKARN_CHANGES.txt.
 //
 // Dovakarn is an online game: no player may turn its shaders' features off or edit weather, fog and lighting to see
-// further than everyone else, and no Skyrim or mod settings window is reachable while playing (Chris, 19/10/2026).
+// further than everyone else, and no Skyrim or mod settings window is reachable while playing (19/10/2026).
 // So, always, with no switch (a switch in a file on the player's PC would be one every player could flip):
 //   - the Community Shaders menu never opens: not on its menu key (ToggleKey), not on the built-in Shift+Enter;
 //   - the CS Editor (weather, lighting and fog editor) never opens: not on its key (CSEditorToggleKey), nor from
