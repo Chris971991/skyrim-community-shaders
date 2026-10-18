@@ -1,0 +1,27 @@
+Dovakarn fork of Community Shaders
+==================================
+
+Based on Community Shaders 1.8.3 (tag v1.8.3, commit a96120fa), by the Community Shaders team:
+https://github.com/community-shaders/skyrim-community-shaders
+Licensed under the GNU General Public License v3.0 (see COPYING). This modified version is
+distributed under the same licence; its full source is published with every build we ship.
+
+Changes by the Dovakarn team (first made 2026-10-18), all on branch dovakarn/perf. They change no
+picture: each only removes main-thread work. Each can be switched off without a rebuild in
+Data\SKSE\Plugins\CommunityShaders_Dovakarn.ini, section [Perf] (missing file or key = on):
+
+- ParticleLightShaderGate  (src/Features/LightLimitFix.cpp, CheckParticleLights)
+  The particle-light test now looks at the pass's shader first and stops for any pass not drawn
+  by the effect shader, instead of reading every pass's (cold) shader property. Only effect-shader
+  passes can carry a particle light, so the result is the same for every pass.
+
+- PrefetchNextPass  (src/Features/LightLimitFix.cpp, BSBatchRenderer_RenderPassImmediately)
+  While a render pass is drawn, the next pass's shader property and geometry, and the pass after
+  that, are prefetched into the CPU cache, so the next draw does not wait on memory.
+
+- ProfilerOnlyWhenVisible  (src/Profiler.*, src/State.cpp Reset)
+  The built-in pass profiler (GPU timestamp queries and per-frame statistics) runs only while the
+  Community Shaders menu or overlay is open, or frame annotations are on. Its numbers are only
+  shown there.
+
+Switch file reader: src/DovakarnPerf.h, loaded in src/XSEPlugin.cpp.

@@ -1,4 +1,5 @@
 #include "Deferred.h"
+#include "DovakarnPerf.h"
 #include "Features/Upscaling.h"
 #include "FrameAnnotations.h"
 #include "Globals.h"
@@ -52,6 +53,9 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 #endif
 	InitializeLog();
 	logger::info("Loaded {} {}", Plugin::NAME, Plugin::VERSION.string());
+	DovakarnPerf::Load();
+	logger::info("[Dovakarn] ParticleLightShaderGate={} PrefetchNextPass={} ProfilerOnlyWhenVisible={}",
+		DovakarnPerf::settings.particleLightShaderGate, DovakarnPerf::settings.prefetchNextPass, DovakarnPerf::settings.profilerOnlyWhenVisible);
 	SKSE::Init(a_skse);
 	SKSE::AllocTrampoline(1 << 10);
 	return Load();
