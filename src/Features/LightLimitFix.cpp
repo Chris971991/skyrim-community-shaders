@@ -9,7 +9,10 @@
 #include "State.h"
 #include "Utils/ExternalEmittance.h"
 
+#include "DovakarnPerf.h"
+
 #include <numbers>
+#include <xmmintrin.h>
 
 #define I18N_KEY_PREFIX "feature.light_limit_fix."
 
@@ -859,6 +862,16 @@ bool LightLimitFix::QueueParticleLight(RE::BSRenderPass* a_pass, VertexColorCach
 bool LightLimitFix::CheckParticleLights(RE::BSRenderPass* a_pass, uint32_t)
 {
 	if (!a_pass || !a_pass->geometry || !a_pass->shaderProperty)
+		return true;
+
+	// Dovakarn: only a BSEffectShaderProperty can carry a particle light (GetParticleLightConfig), and the
+	// engine (1.6.1170) draws that property only with BSEffectShader: its GetRenderPasses allocates every pass
+	// with BSEffectShader, and its only other pass source, GetRenderPasses_ShadowMapOrMask (utility shader),
+	// needs no alpha property or an alpha-tested one, which alphaFlags 4109 below never is. The shader object is
+	// hot in cache, the property is not, so test the shader first and leave the property alone for all other
+	// passes. Same result for every pass.
+	if (DovakarnPerf::settings.particleLightShaderGate &&
+		(!a_pass->shader || a_pass->shader->shaderType.get() != RE::BSShader::Type::Effect))
 		return true;
 
 	using Flag = RE::BSShaderProperty::EShaderPropertyFlag;
