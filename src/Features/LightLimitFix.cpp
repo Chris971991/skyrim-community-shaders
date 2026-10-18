@@ -904,13 +904,13 @@ void LightLimitFix::AddParticleLightsToBuffer(eastl::vector<LightData>& a_lights
 	std::swap(currentParticleLights, queuedParticleLights);
 	// Dovakarn: optional count of particle lights queued per frame, to prove ParticleLightShaderGate changes none
 	if (DovakarnPerf::settings.logParticleLights) {
-		static std::uint64_t frames = 0, lights = 0;
-		lights += currentParticleLights.size();
-		if (++frames == 600) {
+		static std::uint64_t loggedFrames = 0, loggedLights = 0;
+		loggedLights += currentParticleLights.size();
+		if (++loggedFrames == 600) {
 			logger::info("[Dovakarn] particle lights queued per frame over 600 frames: {:.2f} (ParticleLightShaderGate={})",
-				static_cast<double>(lights) / 600.0, DovakarnPerf::settings.particleLightShaderGate);
-			frames = 0;
-			lights = 0;
+				static_cast<double>(loggedLights) / 600.0, DovakarnPerf::settings.particleLightShaderGate);
+			loggedFrames = 0;
+			loggedLights = 0;
 		}
 	}
 
