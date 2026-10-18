@@ -82,7 +82,7 @@ void Profiler::Release()
 
 void Profiler::BeginFrame()
 {
-	if (!initialized || !context || frameActive)
+	if (!active || !initialized || !context || frameActive)
 		return;
 
 	CollectResults();
@@ -96,7 +96,7 @@ void Profiler::BeginFrame()
 
 void Profiler::BeginPass(const std::string& name)
 {
-	if (!initialized || !context)
+	if (!active || !initialized || !context)
 		return;
 
 	if (!frameActive)

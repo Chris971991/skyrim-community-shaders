@@ -5,7 +5,9 @@
 #include <pystring/pystring.h>
 
 #include "Deferred.h"
+#include "DovakarnPerf.h"
 #include "FeatureIssues.h"
+#include "Profiler.h"
 #include "Features/CSEditor.h"
 #include "Features/CloudShadows.h"
 #include "Features/Effects11.h"
@@ -219,6 +221,14 @@ bool State::HandlePostProcessing(RE::RENDER_TARGET a_input, RE::RENDER_TARGET a_
 void State::Reset()
 {
 	globals::profiler->EndFrame();
+
+	// Dovakarn: the pass profiler (GPU timestamp queries, CPU timers, and every frame a sort of 300 samples
+	// four times per pass for its percentiles) is only shown in CS's menu and overlay, so run it only while
+	// one of those is open, or while frame annotations want its markers. Switched here, between frames.
+	if (DovakarnPerf::settings.profilerOnlyWhenVisible) {
+		auto menu = globals::menu;
+		globals::profiler->SetActive(frameAnnotations || (menu && (menu->IsEnabled || menu->overlayVisible)));
+	}
 
 	Feature::ForEachLoadedFeature("Reset", [](Feature* feature) { feature->Reset(); });
 

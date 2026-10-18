@@ -101,6 +101,13 @@ public:
 		endPerfEvent = std::move(endCb);
 	}
 
+	/**
+	 * @brief Dovakarn: turns timing on or off. Call only between frames (after EndFrame).
+	 * While off, BeginFrame/BeginPass do nothing, so EndPass/EndFrame do nothing either:
+	 * no timestamp queries, no CPU timers, no per-frame statistics.
+	 */
+	void SetActive(bool a_active) { active = a_active; }
+
 	/** @brief Begins a new profiling frame; collects results from the oldest in-flight frame. */
 	void BeginFrame();
 
@@ -174,6 +181,7 @@ private:
 	uint32_t readFrame = 0;
 	uint32_t framesSinceInit = 0;
 	bool initialized = false;
+	bool active = true;
 	bool frameActive = false;
 	double cpuTicksToMs = 0.0;
 
