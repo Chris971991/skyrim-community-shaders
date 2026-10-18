@@ -1,6 +1,6 @@
 > **Dovakarn fork.** This branch (`dovakarn/perf`) is Community Shaders 1.8.3 by the Community Shaders team
 > (https://github.com/community-shaders/skyrim-community-shaders) with main-thread performance changes made for the
-> Dovakarn multiplayer server. Only `CommunityShaders.dll` differs from the official 1.8.3 release. What changed and why:
+> Dovakarn multiplayer server, and its menus closed for online play (DovakarnMenus.h). Only `CommunityShaders.dll` differs from the official 1.8.3 release. What changed and why:
 > [DOVAKARN_CHANGES.txt](DOVAKARN_CHANGES.txt); how to build it: [DOVAKARN-BUILD.md](DOVAKARN-BUILD.md). Licensed, like
 > the original, under the GPL-3.0 ([COPYING](COPYING)). All credit for Community Shaders goes to its authors; please
 > report problems with this build to Dovakarn, not to them.

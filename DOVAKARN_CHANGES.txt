@@ -32,3 +32,16 @@ Data\SKSE\Plugins\CommunityShaders_Dovakarn.ini, section [Perf] (missing file or
   shown there.
 
 Switch file reader: src/DovakarnPerf.h, loaded in src/XSEPlugin.cpp.
+
+Menus closed for online play (2026-10-19, branch dovakarn/menus on top of dovakarn/perf; src/DovakarnMenus.h).
+No switch: Dovakarn is an online game where no player may turn features off or edit weather and fog to see
+further than others, and a switch in a file on the player's PC would be one every player could flip.
+- The menu never opens: its menu key (src/Menu.cpp, ToggleKey action) and the built-in Shift+Enter do nothing,
+  and Shift+Enter goes on to the game like any other key.
+- The CS Editor (weather, lighting, fog) never opens: EditorWindow::CanBeOpen answers false, and every way in (its
+  key, the menu's button, EditorWindow::OpenWeatherFeatureSetting) asks it first.
+- The first-start dialog never shows (HomePageRenderer::ShouldShowFirstTimeSetup answers false).
+- Remote Control does not register its tools with a devbench host (src/Features/RemoteControl.cpp DataLoaded).
+- Unchanged: the effects key (all effects on or off) and the performance overlay, which takes no input while the
+  menu is closed.
+To use the menu or the editor while developing, load the official DLL instead.

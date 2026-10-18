@@ -1,6 +1,7 @@
 #include "EditorWindow.h"
 
 #include "../I18n/I18n.h"
+#include "DovakarnMenus.h"
 #include "Features/CSEditor.h"
 #include "Features/HDRDisplay.h"
 #include "Features/Upscaling.h"
@@ -1421,6 +1422,8 @@ void EditorWindow::OpenWeatherFeatureSetting(RE::TESWeather* weather, const std:
 
 	// Open the editor if it's not already open
 	if (!open) {
+		if (!CanBeOpen())  // Dovakarn: never opens (DovakarnMenus.h)
+			return;
 		open = true;
 	}
 
@@ -2220,6 +2223,10 @@ void EditorWindow::DrawTimeControls()
 
 bool EditorWindow::CanBeOpen()
 {
+	// Dovakarn: the weather, lighting and fog editor never opens (DovakarnMenus.h). Every way in (its key, the menu's
+	// button, a feature's link to a weather setting) asks here first.
+	if (DovakarnMenus::closed)
+		return false;
 	auto* player = globals::game::player;
 	auto* state = globals::state;
 	return player && player->parentCell && !state->isLoadingMenuOpen && !state->isMainMenuOpen;

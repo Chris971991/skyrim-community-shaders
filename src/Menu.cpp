@@ -42,6 +42,7 @@
 #include "Utils/UI.h"
 
 #include "CSEditor/EditorWindow.h"
+#include "DovakarnMenus.h"
 #include "Features/CSEditor.h"
 #include "Features/PerformanceOverlay.h"
 #include "Features/PerformanceOverlay/ABTesting/ABTestAggregator.h"
@@ -1073,7 +1074,8 @@ void Menu::ProcessInputEventQueue()
 				auto shaderCache = globals::shaderCache;
 				KeyAction keyActions[] = {
 					{ settings.ToggleKey, [this]() {
-						 if (!HomePageRenderer::ShouldShowFirstTimeSetup()) {
+						 // Dovakarn: the menu never opens (DovakarnMenus.h)
+						 if (!DovakarnMenus::closed && !HomePageRenderer::ShouldShowFirstTimeSetup()) {
 							 IsEnabled = !IsEnabled;
 							 if (IsEnabled)
 								 ImGui::GetIO().ClearInputKeys();  // Prevent toggle key from remaining "held" in ImGui after open.
@@ -1117,7 +1119,8 @@ void Menu::ProcessInputEventQueue()
 			};
 
 			// Hardcoded Shift+Enter toggle for the CS menu (always available)
-			if (event.IsDown() && key == VK_RETURN && (GetAsyncKeyState(VK_SHIFT) & 0x8000)) {
+			// Dovakarn: not in this build; Shift+Enter goes on to the game like any other key (DovakarnMenus.h)
+			if (!DovakarnMenus::closed && event.IsDown() && key == VK_RETURN && (GetAsyncKeyState(VK_SHIFT) & 0x8000)) {
 				if (!HomePageRenderer::ShouldShowFirstTimeSetup()) {
 					IsEnabled = !IsEnabled;
 					if (IsEnabled)

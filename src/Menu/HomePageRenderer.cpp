@@ -3,6 +3,7 @@
 
 #include <imgui.h>
 
+#include "DovakarnMenus.h"
 #include "FeatureConstraints.h"
 #include "Globals.h"
 #include "I18n/I18n.h"
@@ -569,6 +570,12 @@ void HomePageRenderer::RenderFirstTimeSetupDialog()
 
 bool HomePageRenderer::ShouldShowFirstTimeSetup()
 {
+	// Dovakarn: the dialog asks for the key of a menu that never opens, and would hold the keyboard and mouse
+	if (DovakarnMenus::closed) {
+		return false;
+	}
+
+
 	// Check if already completed this session
 	if (isFirstTimeSetupShown) {
 		return false;

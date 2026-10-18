@@ -8,6 +8,7 @@
 
 #include "Features/RemoteControl.h"
 
+#include "DovakarnMenus.h"
 #include "Features/RemoteControl/DevBenchBridge.h"
 #include "Globals.h"
 #include "Menu.h"
@@ -73,6 +74,9 @@ void RemoteControl::DataLoaded()
 	// DataLoaded rather than Load because devbench publishes its cross-plugin interface at
 	// kPostLoad — by DataLoaded it's ready. Inert (logged) when no host is present or the
 	// bridge was built disabled; idempotent on the devbench side (re-registering replaces).
+	// Dovakarn: never registered, so no outside program can change its settings either (DovakarnMenus.h)
+	if (DovakarnMenus::closed)
+		return;
 	DevBenchBridge::Install();
 }
 
