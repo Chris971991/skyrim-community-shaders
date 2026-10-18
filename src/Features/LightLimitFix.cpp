@@ -870,6 +870,12 @@ bool LightLimitFix::CheckParticleLights(RE::BSRenderPass* a_pass, uint32_t)
 	// needs no alpha property or an alpha-tested one, which alphaFlags 4109 below never is. The shader object is
 	// hot in cache, the property is not, so test the shader first and leave the property alone for all other
 	// passes. Same result for every pass.
+	if (DovakarnPerf::settings.logParticleLights && a_pass->shaderProperty->GetRTTI() == globals::rtti::BSEffectShaderPropertyRTTI.get()) {
+		// Debug check of the gate's premise: every effect-property pass is drawn by the effect shader
+		++dovakarnEffectPropertyPasses;
+		if (!a_pass->shader || a_pass->shader->shaderType.get() != RE::BSShader::Type::Effect)
+			++dovakarnEffectPropertyOtherShader;
+	}
 	if (DovakarnPerf::settings.particleLightShaderGate &&
 		(!a_pass->shader || a_pass->shader->shaderType.get() != RE::BSShader::Type::Effect))
 		return true;
@@ -907,10 +913,14 @@ void LightLimitFix::AddParticleLightsToBuffer(eastl::vector<LightData>& a_lights
 		static std::uint64_t loggedFrames = 0, loggedLights = 0;
 		loggedLights += currentParticleLights.size();
 		if (++loggedFrames == 600) {
-			logger::info("[Dovakarn] particle lights queued per frame over 600 frames: {:.2f} (ParticleLightShaderGate={})",
-				static_cast<double>(loggedLights) / 600.0, DovakarnPerf::settings.particleLightShaderGate);
+			logger::info("[Dovakarn] per frame over 600 frames: particle lights queued {:.2f}; effect-property passes {:.1f}, "
+						 "of them drawn by a non-effect shader {} in total (must be 0) (ParticleLightShaderGate={})",
+				static_cast<double>(loggedLights) / 600.0, static_cast<double>(dovakarnEffectPropertyPasses) / 600.0,
+				dovakarnEffectPropertyOtherShader, DovakarnPerf::settings.particleLightShaderGate);
 			loggedFrames = 0;
 			loggedLights = 0;
+			dovakarnEffectPropertyPasses = 0;
+			dovakarnEffectPropertyOtherShader = 0;
 		}
 	}
 

@@ -42,6 +42,9 @@ struct LightLimitFix : OverlayFeature
 	std::shared_mutex particleLightsMutex;
 
 	bool CheckParticleLights(RE::BSRenderPass* a_pass, uint32_t a_technique);
+	// Dovakarn debug counters (LogParticleLights): effect-property passes, and those not drawn by the effect shader
+	std::uint64_t dovakarnEffectPropertyPasses = 0;
+	std::uint64_t dovakarnEffectPropertyOtherShader = 0;
 
 public:
 	virtual inline std::string GetName() override { return "Light Limit Fix"; }
