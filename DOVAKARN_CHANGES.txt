@@ -19,6 +19,13 @@ Data\SKSE\Plugins\CommunityShaders_Dovakarn.ini, section [Perf] (missing file or
   While a render pass is drawn, the next pass's shader property and geometry, and the pass after
   that, are prefetched into the CPU cache, so the next draw does not wait on memory.
 
+- PrefetchPassObjects  (src/Features/LightLimitFix.cpp, BSBatchRenderer_RenderPassImmediately)
+  At the start of each render pass, the objects the engine reads later in that pass (the mesh's
+  renderer data, the material, the alpha property, the skin instance) are prefetched.
+
+- LogParticleLights (debug, off by default)  (src/Features/LightLimitFix.cpp, AddParticleLightsToBuffer)
+  Logs how many particle lights were queued per frame, averaged over 600 frames.
+
 - ProfilerOnlyWhenVisible  (src/Profiler.*, src/State.cpp Reset)
   The built-in pass profiler (GPU timestamp queries and per-frame statistics) runs only while the
   Community Shaders menu or overlay is open, or frame annotations are on. Its numbers are only

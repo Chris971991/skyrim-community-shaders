@@ -902,6 +902,17 @@ void LightLimitFix::AddParticleLightsToBuffer(eastl::vector<LightData>& a_lights
 
 	currentParticleLights.clear();
 	std::swap(currentParticleLights, queuedParticleLights);
+	// Dovakarn: optional count of particle lights queued per frame, to prove ParticleLightShaderGate changes none
+	if (DovakarnPerf::settings.logParticleLights) {
+		static std::uint64_t frames = 0, lights = 0;
+		lights += currentParticleLights.size();
+		if (++frames == 600) {
+			logger::info("[Dovakarn] particle lights queued per frame over 600 frames: {:.2f} (ParticleLightShaderGate={})",
+				static_cast<double>(lights) / 600.0, DovakarnPerf::settings.particleLightShaderGate);
+			frames = 0;
+			lights = 0;
+		}
+	}
 
 	auto& effects11 = globals::features::effects11;
 
@@ -970,11 +981,34 @@ namespace
 		if (const auto* geometry = next->geometry)
 			PrefetchLines(geometry, 0x180);  // vtable, world transform and bound, properties, renderer data, vertex desc
 	}
+
+	// Dovakarn: the second level for THIS pass. Its geometry and property lines were prefetched while the previous
+	// pass drew, so reading their pointers here does not stall; the objects they point to (the mesh's renderer data
+	// with its vertex/index buffers, the material, the alpha property, the skin instance) are first read by the
+	// engine later in this same pass (SetupMaterial, SetupGeometry, DrawIndexedTriShape), so start fetching them now.
+	inline void PrefetchPassObjects(RE::BSRenderPass* a_pass)
+	{
+		if (auto* geometry = a_pass->geometry) {
+			auto& data = geometry->GetGeometryRuntimeData();
+			if (const auto* rendererData = data.rendererData)
+				PrefetchLines(rendererData, 0x80);
+			if (const auto* alpha = data.alphaProperty.get())
+				PrefetchLines(alpha, 0x40);
+			if (const auto* skin = data.skinInstance.get())
+				PrefetchLines(skin, 0x80);
+		}
+		if (auto* property = a_pass->shaderProperty) {
+			if (const auto* material = property->GetBaseMaterial())
+				PrefetchLines(material, 0x100);
+		}
+	}
 }
 
 template <int N>
 void LightLimitFix::Hooks::BSBatchRenderer_RenderPassImmediately<N>::thunk(RE::BSRenderPass* a_pass, uint32_t a_technique, bool a_alphaTest, uint32_t a_renderFlags)
 {
+	if (a_pass && DovakarnPerf::settings.prefetchPassObjects)
+		PrefetchPassObjects(a_pass);
 	if (a_pass && DovakarnPerf::settings.prefetchNextPass)
 		PrefetchNextPass(a_pass);
 	if (globals::features::lightLimitFix.CheckParticleLights(a_pass, a_technique))

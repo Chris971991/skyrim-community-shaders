@@ -9,7 +9,9 @@
 //   ParticleLightShaderGate=1   ; skip the particle-light test for passes not drawn by the effect shader
 //   PrefetchNextPass=1          ; prefetch the next render pass's property and geometry while this one draws
 //   ProfilerOnlyWhenVisible=1   ; run the GPU/CPU pass profiler only while CS's menu or overlay is open
-// A missing file or key means on (1).
+//   PrefetchPassObjects=1       ; prefetch this pass's mesh renderer data, material, alpha property and skin
+//   LogParticleLights=0         ; debug: log particle lights queued per frame every 600 frames
+// A missing file or key means the default shown.
 
 #include <Windows.h>
 
@@ -20,6 +22,8 @@ namespace DovakarnPerf
 		bool particleLightShaderGate = true;
 		bool prefetchNextPass = true;
 		bool profilerOnlyWhenVisible = true;
+		bool prefetchPassObjects = true;
+		bool logParticleLights = false;
 	};
 
 	inline Settings settings{};
@@ -30,5 +34,7 @@ namespace DovakarnPerf
 		settings.particleLightShaderGate = GetPrivateProfileIntA("Perf", "ParticleLightShaderGate", 1, path) != 0;
 		settings.prefetchNextPass = GetPrivateProfileIntA("Perf", "PrefetchNextPass", 1, path) != 0;
 		settings.profilerOnlyWhenVisible = GetPrivateProfileIntA("Perf", "ProfilerOnlyWhenVisible", 1, path) != 0;
+		settings.prefetchPassObjects = GetPrivateProfileIntA("Perf", "PrefetchPassObjects", 1, path) != 0;
+		settings.logParticleLights = GetPrivateProfileIntA("Perf", "LogParticleLights", 0, path) != 0;
 	}
 }

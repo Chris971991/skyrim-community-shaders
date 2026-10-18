@@ -54,8 +54,9 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	InitializeLog();
 	logger::info("Loaded {} {}", Plugin::NAME, Plugin::VERSION.string());
 	DovakarnPerf::Load();
-	logger::info("[Dovakarn] ParticleLightShaderGate={} PrefetchNextPass={} ProfilerOnlyWhenVisible={}",
-		DovakarnPerf::settings.particleLightShaderGate, DovakarnPerf::settings.prefetchNextPass, DovakarnPerf::settings.profilerOnlyWhenVisible);
+	logger::info("[Dovakarn] ParticleLightShaderGate={} PrefetchNextPass={} ProfilerOnlyWhenVisible={} PrefetchPassObjects={} LogParticleLights={}",
+		DovakarnPerf::settings.particleLightShaderGate, DovakarnPerf::settings.prefetchNextPass, DovakarnPerf::settings.profilerOnlyWhenVisible,
+		DovakarnPerf::settings.prefetchPassObjects, DovakarnPerf::settings.logParticleLights);
 	SKSE::Init(a_skse);
 	SKSE::AllocTrampoline(1 << 10);
 	return Load();
