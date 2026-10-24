@@ -31,8 +31,14 @@ public:
 		float ShadowContrast = 1.0f;
 		uint Enable = 1;
 		uint SampleCount = 1;
-		uint pad0[3];
+		// Dovakarn: view distance (game units) where contact shadows start fading out, and where they are gone. The
+		// shadow window and ray length grow with distance in world units, so far away they smear across terrain; see
+		// bend_sss_gpu.hlsli. FadeEnd <= FadeStart turns the fade off (upstream behaviour).
+		float FadeStart = 1500.0f;
+		float FadeEnd = 3000.0f;
+		uint pad0 = 0;
 	};
+	static_assert(sizeof(BendSettings) == 32, "RaymarchCB layout: BendSettings must stay two float4 rows");
 
 	BendSettings bendSettings;
 
@@ -54,6 +60,8 @@ public:
 		float2 DynamicRes;
 
 		BendSettings settings;
+
+		float4 CameraData;  // Dovakarn: Util::GetCameraData() (far, near, far - near, far * near) for the distance fade
 	};
 	STATIC_ASSERT_ALIGNAS_16(RaymarchCB);
 

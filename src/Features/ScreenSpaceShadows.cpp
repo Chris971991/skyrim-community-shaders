@@ -4,6 +4,7 @@
 #include "I18n/I18n.h"
 #include "State.h"
 #include "Utils/D3D.h"
+#include "Utils/Game.h"
 
 #define I18N_KEY_PREFIX "feature.screen_space_shadows."
 
@@ -20,7 +21,9 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 	SampleCount,
 	SurfaceThickness,
 	BilinearThreshold,
-	ShadowContrast)
+	ShadowContrast,
+	FadeStart,
+	FadeEnd)
 
 void ScreenSpaceShadows::DrawSettings()
 {
@@ -44,6 +47,14 @@ void ScreenSpaceShadows::DrawSettings()
 		ImGui::SliderFloat(T(TKEY("shadow_contrast"), "Shadow Contrast"), &bendSettings.ShadowContrast, 0.0f, 4.0f);
 		if (auto _tt = Util::HoverTooltipWrapper())
 			ImGui::Text("%s", T(TKEY("shadow_contrast_tooltip"), "Contrast boost for the shadow transition. Higher values produce harder shadow edges."));
+
+		ImGui::SliderFloat(T(TKEY("fade_start"), "Fade Start"), &bendSettings.FadeStart, 0.0f, 20000.0f, "%.0f");
+		if (auto _tt = Util::HoverTooltipWrapper())
+			ImGui::Text("%s", T(TKEY("fade_start_tooltip"), "View distance in game units where contact shadows start to fade out."));
+
+		ImGui::SliderFloat(T(TKEY("fade_end"), "Fade End"), &bendSettings.FadeEnd, 0.0f, 40000.0f, "%.0f");
+		if (auto _tt = Util::HoverTooltipWrapper())
+			ImGui::Text("%s", T(TKEY("fade_end_tooltip"), "View distance in game units past which no contact shadows are drawn. Far away the shadow window grows with distance and smears across terrain. At or below Fade Start: no fade."));
 
 		ImGui::Spacing();
 		ImGui::Spacing();
@@ -154,6 +165,8 @@ void ScreenSpaceShadows::DrawShadows()
 
 	float2 dynamicRes = { viewport->GetRuntimeData().dynamicResolutionWidthRatio, viewport->GetRuntimeData().dynamicResolutionHeightRatio };
 
+	const float4 cameraData = Util::GetCameraData();
+
 	// Shared dispatch logic
 	auto Dispatch = [&](ID3D11ComputeShader* shader, const float* lightProj,
 						float invTexSizeX, float invTexSizeY) {
@@ -191,6 +204,7 @@ void ScreenSpaceShadows::DrawShadows()
 				data.InvDepthTextureSize[1] = invTexSizeY;
 
 				data.settings = bendSettings;
+				data.CameraData = cameraData;
 
 				raymarchCB->Update(data);
 			}

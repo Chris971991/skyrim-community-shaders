@@ -19,6 +19,10 @@
 // We are *always* looking for talented graphics and technical programmers!
 // https://www.bendstudio.com/careers
 
+// MODIFIED by Dovakarn (2026-10-25), as part of its Community Shaders 1.8.3 fork: a distance fade (FadeStart, FadeEnd,
+// CameraData) so the contact shadow is traced only at the range where its fixed screen-space ray and depth-relative
+// surface thickness hold. Every change is marked "Dovakarn".
+
 // Common screen space shadow projection code (GPU):
 //--------------------------------------------------------------
 
@@ -57,6 +61,17 @@ struct DispatchParameters
 						  // Recommended starting value: 2 or 4. Values >= 1 are valid.
 
 	float2 DynamicRes;
+
+	// Dovakarn: distance fade. The shadow window (SurfaceThickness) is a fraction of the remaining non-linear depth and the
+	// ray is a fixed number of screen pixels, so in world units both grow with the receiver's distance: about
+	// SurfaceThickness x distance thick and SAMPLE_COUNT x pixel footprint long. Near the camera that is the few units a
+	// contact shadow needs; on far terrain every tree, rock and LOD billboard becomes a slab tens of metres thick casting a
+	// ray tens of metres long, which paints dark smears across hillsides that the shadow map has already shaded correctly.
+	// So the term is traced only where its assumptions hold: full strength up to FadeStart, faded out by FadeEnd (view
+	// distance in game units, from the receiver's own depth), and not traced at all beyond FadeEnd.
+	float FadeStart;
+	float FadeEnd;     // <= FadeStart: no fade (upstream behaviour)
+	float4 CameraData;  // x = far, y = near, z = far - near, w = far * near
 
 	bool IgnoreEdgePixels;  // If an edge is detected, the edge pixel will not contribute to the shadow.
 							// If a very flat surface is being lit and rendered at an grazing angles, the edge detect may incorrectly detect multiple 'edge' pixels along that flat surface.
@@ -98,6 +113,9 @@ struct DispatchParameters
 		DebugOutputEdgeMask = false;
 		DebugOutputThreadIndex = false;
 		DebugOutputWaveIndex = false;
+		FadeStart = 0;
+		FadeEnd = 0;
+		CameraData = 0;
 	}
 
 	// Runtime data returned from BuildDispatchList():
@@ -310,6 +328,16 @@ void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int
 	if (start_depth == 0.0 || start_depth == 1.0)
 		return;
 
+	// Dovakarn: distance fade on the receiving pixel's view distance (see FadeStart/FadeEnd). Past FadeEnd the pixel is
+	// left as cleared (1 = lit) without tracing; the group barrier above has already passed, so returning here is safe.
+	float distance_fade = 0.0;
+	if (inParameters.FadeEnd > inParameters.FadeStart && inParameters.CameraData.x > 0.0) {
+		float view_distance = inParameters.CameraData.w / (inParameters.CameraData.x - (float)start_depth * inParameters.CameraData.z);
+		distance_fade = smoothstep(inParameters.FadeStart, inParameters.FadeEnd, view_distance);
+		if (distance_fade >= 1.0)
+			return;
+	}
+
 	// lerp away from far depth by a tiny fraction?
 	if (inParameters.UsePrecisionOffset)
 		start_depth = lerp(start_depth, inParameters.FarDepthValue, -1.0 / 0xFFFF);
@@ -349,6 +377,9 @@ void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int
 
 	// Take the average of 4 samples, this is useful to reduces aliasing noise in the source depth, especially with long shadows.
 	result = dot(shadow_value, 0.25);
+
+	// Dovakarn: fade towards lit between FadeStart and FadeEnd
+	result = lerp(result, 1.0, distance_fade);
 
 	// Asking the GPU to write scattered single-byte pixels isn't great,
 	// But thankfully the latency is hidden by all the work we're doing...

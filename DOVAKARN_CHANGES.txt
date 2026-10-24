@@ -45,3 +45,25 @@ further than others, and a switch in a file on the player's PC would be one ever
 - Unchanged: the effects key (all effects on or off) and the performance overlay, which takes no input while the
   menu is closed.
 To use the menu or the editor while developing, load the official DLL instead.
+
+Contact shadows fade out with distance (2026-10-25, branch dovakarn/contact-shadows on top of dovakarn/perf). This one
+changes the picture, on purpose: Screen-Space Shadows (Bend Studio's screen space shadows) painted dark, blurry smears
+across far hillsides, under and beside trees, that no shadow map draws.
+- Why: the shadow window (SurfaceThickness) is a fraction of the remaining non-linear depth, so in world units every
+  pixel is about SurfaceThickness x its distance thick (0.02 = 1 unit per 50 of distance), and the ray is a fixed number
+  of screen pixels, so its length in world units also grows with distance. Up close that is the few units a contact
+  shadow needs. At 5,000 units and more a pine trunk becomes a 100-unit slab casting a ray of several hundred units, so
+  thin trees and LOD billboards smear long soft shadows over terrain the shadow map has already shaded.
+- Fix: the ray march fades its result out between FadeStart and FadeEnd (view distance in game units, from the
+  receiving pixel's own depth and the camera's near and far planes) and does not trace past FadeEnd at all (the pixel
+  keeps the cleared value, lit). Defaults 1500 and 3000: full contact shadows up to about 21 m, none past about 43 m,
+  which is inside the sun's shadow-map distance on every Dovakarn preset (3000 to 8000).
+- Files: src/Features/ScreenSpaceShadows.h/.cpp (BendSettings.FadeStart/FadeEnd, saved and loaded with the other
+  settings; RaymarchCB.CameraData from Util::GetCameraData; two sliders in the settings page),
+  features/Screen-Space Shadows/Shaders/ScreenSpaceShadows/RaymarchCS.hlsl (constant buffer) and bend_sss_gpu.hlsli
+  (the fade, marked "Dovakarn"). FadeEnd at or below FadeStart turns the fade off (upstream behaviour). The shaders
+  and the DLL must come from the same commit (the constant buffer grew), so Dovakarn serves this feature's shader
+  folder too (tools/dovakarn-features.ps1).
+- Measured at Dovakarn's test spot outside Whiterun (RTX 4090, 3440x1440, Ultra, noon): the far hillside smears gone
+  with Contact shadows High and On, the near contact shadows under a cart and in a barn's openings unchanged, graphics
+  card busy time a frame 8.46-8.47 ms with the fade against 8.46-8.53 ms without (unchanged).

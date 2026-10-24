@@ -33,6 +33,14 @@ cbuffer PerFrame : register(b1)
 	float SurfaceThickness;
 	float BilinearThreshold;
 	float ShadowContrast;
+	uint Enable;
+
+	uint SampleCount;
+	float FadeStart;  // Dovakarn: view distance (game units) where the contact shadow starts to fade out
+	float FadeEnd;    // Dovakarn: view distance (game units) past which no contact shadow is traced (0 = no fade)
+	uint pad0;
+
+	float4 CameraData;  // Dovakarn: x = far, y = near, z = far - near, w = far * near (Util::GetCameraData)
 };
 
 [numthreads(WAVE_SIZE, 1, 1)] void main(
@@ -55,6 +63,10 @@ cbuffer PerFrame : register(b1)
 	parameters.ShadowContrast = ShadowContrast;
 
 	parameters.DynamicRes = DynamicRes;
+
+	parameters.FadeStart = FadeStart;
+	parameters.FadeEnd = FadeEnd;
+	parameters.CameraData = CameraData;
 
 	parameters.UsePrecisionOffset = true;
 
