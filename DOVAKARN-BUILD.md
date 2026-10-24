@@ -12,3 +12,12 @@ feature files are the official ones.
 4. Output: `build/Dovakarn/Release/CommunityShaders.dll` (+ `.pdb`).
 
 Switches for each change: `Data/SKSE/Plugins/CommunityShaders_Dovakarn.ini`, see `src/DovakarnPerf.h`.
+
+## Feature files Dovakarn serves (2026-10-24)
+
+Besides the DLL, Dovakarn's server hands its players five features from this fork's `features` folder, unchanged and
+at the same commit as the DLL, so the shaders always match the plugin that compiles them: Wetness Effects, Skylighting,
+Terrain Blending, Terrain Variation and Screen Space GI. `powershell -File tools\dovakarn-features.ps1 -Out <folder>`
+copies each one's `Shaders\Features\<Name>.ini` and shader folder into `<folder>\Shaders`; Dovakarn copies them into
+its server's player-settings folder. Not served: Terrain Helper (needs its own plugin, TerrainHelper.esp) and
+Exponential Height Fog (unreleased in 1.8.3: off by default, with no tuned look).
